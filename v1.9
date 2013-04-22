@@ -1,0 +1,138 @@
+local beeTable = {}
+local data = " "
+local princess = 0
+local bestDrone = 0
+local currentSlot = 1
+local score = 0
+local scoreA = 0
+local scoreB = 0
+local currentBest = 0
+--local type = "" //used to test the type of bee
+
+s = peripheral.wrap("right") --wraps the inventory upgrade
+
+
+function regTable() --initiallises table for bee scores
+  print("tables created")
+	beeTable["Tarnished"] = 2
+	beeTable["Corroded"] = 2
+	beeTable["Resolute"] = 5
+end
+
+function getBees() -- removes combs+bees from apiary
+	turtle.select(1) --sets the cursor to top left
+	while beeCount = 0 do
+	 if turtle.suck() then
+	  beeCount = beeCount + 1
+	for i = 1,5 do -- attempts to suck for maximum number -1, 4 drones, 1 princess and combs
+		if turtle.suck() then --attempts to suck a bee if true adds 1 to the bee count and
+			beeCount = beeCount + 1
+		end
+	end
+end
+
+function returnBees() -- returns princess and best drone to apiary
+	turtle.turnRight()
+	turtle.turnRight()
+	turtle.select(princess)
+	s.dropSneaky(1,1) --Places princess into top slot
+	turtle.select(bestDrone)
+	s.dropSneaky(0,1) -- places best drone into bottom slot
+end
+
+function dropCombs()--checks each slot and drops any non-bee items
+	turtle.turnLeft() -- turns turtle from apiary to Bee Analyzer
+	m = peripheral.wrap("front") -- wraps the Bee Anlyzer
+		for i = 1,8 do
+		 turtle.suck()
+			while (not m.isBee()) and (turtle.getItemCount(i) > 0) do --checks each item slot in turn, if the item is a NOT a bee it is dropped
+				turtle.select(i)
+				turtle.drop()
+				if not m.isBee() then
+					print("Dropping combs")
+					turtle.suck()
+					turtle.dropDown()
+					turtle.select(beeCount)
+					turtle.transferTo(i, 1)
+					beeCount = beeCount - 1
+				end
+			end
+	end
+end
+
+function scanBee() -- places bees into Analyzer for scanning
+    turtle.turnLeft()
+	for i = 1, beeCount do --Places bees into the scanner
+		turtle.select(i)
+		turtle.drop()
+	end
+	print("Waiting for scans")
+	sleep(26)
+end
+
+function analyzeBee() --Analyzes the bees to determine if drone or princess
+	for i = 1, beeCount do --for each bee removed
+		turtle.select(i)--selects inventory slot for bee
+		s.suckSneaky(0,1)--removes a bee from the Analyzer
+		print("Analyzing Bee")--User feedback
+		turtle.turnRight() -- turns back to Bee Analyzer
+		m=peripheral.wrap("front") -- wrapping the Bee Analyzer
+		turtle.drop() --  Inserting bee
+		data=m.analyze() -- grabs bee data from Bee Analyzer
+		if (data["type"] == "princess") then
+			princess = i
+			print("Princess = "..i)
+		else
+			determineBest(i)--determine if this drone is new best, passes current slot in
+		end
+		print(data["speciesPrimary"]..":"..data["speciesSecondary"])
+		print("BestDrone = "..bestDrone)
+		turtle.suck()
+		turtle.turnLeft()
+		if i ~= beeCount then 
+			sleep(26) 
+		end
+	end
+end
+
+function determineBest(slot) --Score current bee against current best.
+	scoreA = beeTable[data["speciesPrimary"]] --score for active
+	scoreB = beeTable[data["speciesSecondary"]] --score for inactive
+	score = scoreA + scoreB --Total score for both species
+	print ("Current best score: "..currentBest)
+	print ("Current drone score: "..score)
+	if bestDrone == 0 then --if no best drone has been found default current drone to best
+		bestDrone = slot -- sets the bestDrone slot to the current position
+		currentBest = score -- score for this drone as current best
+	else
+		if (score > currentBest) then --If the current bee is better than current best bee update score and position
+			bestDrone = slot
+			currentbest = score
+		end
+	end
+end
+
+function dropExcess()--Drops any left over bees
+	for i = 1, 6 do
+		turtle.select(i)
+		turtle.dropDown()
+	end  
+end
+------============
+currentSlot = 1
+princess = 0
+bestDrone = 0
+data=""
+beeCount = 0
+beeTable = {}
+currentBest = 0
+
+regTable()
+getBees()
+dropCombs()
+scanBee()
+analyzeBee()
+returnBees()
+dropExcess()
+
+
